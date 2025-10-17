@@ -32,6 +32,16 @@ This is the current version of 12-factor agents, version 1.0. There is a draft o
 
 <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=2acad99a-c2d9-48df-86f5-9ca8061b7bf9" />
 
+## Reconciliation Demo Application
+
+This repository now includes a full-stack reference implementation for reconciling contracts, purchase orders, and invoices.
+
+- **Backend**: `apps/reconciliation-server` exposes REST APIs for managing contracts, POs, invoices, and reconciliation findings. It also integrates with the OpenAI API (via `OPENAI_API_KEY`) to augment rule checks with LLM insights.
+- **Frontend**: `apps/reconciliation-client` is a React application that offers dedicated portals for contract uploads, PO management, invoice intake, and an administrative dashboard summarising discrepancies and AI recommendations.
+- **Development**: Run `npm run dev:server` and `npm run dev:client` from the repository root (after installing dependencies) to start both services. Configure authentication demos and API access via environment variables documented in the server README.
+
+The example app follows the structured response formats described in the project brief so it can be deployed to platforms such as GoDaddy with minimal additional wiring.
+
 <a href="#visual-nav"><img width="907" alt="Screenshot 2025-04-03 at 2 49 07 PM" src="https://github.com/user-attachments/assets/23286ad8-7bef-4902-b371-88ff6a22e998" /></a>
 
 
