@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PO Reconciliation Platform</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>PO Reconciliation Platform</h1>
+      <p class="subtitle">Contract, Purchase Order, and Invoice Reconciliation Assistant</p>
+    </header>
+
+    <main>
+      <section id="auth-section" class="card">
+        <h2>Authentication</h2>
+        <div class="form-grid">
+          <label for="auth-email">Email</label>
+          <input id="auth-email" type="email" placeholder="user@example.com" />
+
+          <label for="auth-method">Method</label>
+          <select id="auth-method">
+            <option value="google">Google</option>
+            <option value="email">Email</option>
+          </select>
+        </div>
+        <button id="login-btn">Login</button>
+        <pre id="auth-result" class="result"></pre>
+      </section>
+
+      <section id="contract-portal" class="card">
+        <h2>Contract Upload Portal</h2>
+        <form id="contract-form">
+          <div class="form-grid">
+            <label for="contract-vendor">Vendor ID</label>
+            <input id="contract-vendor" name="vendor_id" required />
+
+            <label for="contract-terms">Agreement Terms</label>
+            <textarea id="contract-terms" name="agreement_terms" rows="3" required></textarea>
+
+            <label for="contract-file">Contract File</label>
+            <input id="contract-file" name="file" type="file" accept=".pdf,.jpg,.csv,.xls,.xlsx" required />
+          </div>
+          <button type="submit">Upload Contract</button>
+        </form>
+        <pre id="contract-result" class="result"></pre>
+        <div>
+          <button id="refresh-contracts" class="link-btn">Refresh Contracts</button>
+          <table id="contracts-table"></table>
+        </div>
+      </section>
+
+      <section id="po-portal" class="card">
+        <h2>PO Management Portal</h2>
+        <form id="po-form">
+          <div class="form-grid">
+            <label for="po-vendor">Vendor ID</label>
+            <input id="po-vendor" name="vendor_id" required />
+
+            <label for="po-issue-date">Issue Date</label>
+            <input id="po-issue-date" name="issue_date" type="date" required />
+          </div>
+
+          <h3>PO Items</h3>
+          <div id="po-items"></div>
+          <button type="button" id="add-po-item" class="secondary">Add Item</button>
+          <button type="submit">Create Purchase Order</button>
+        </form>
+        <pre id="po-result" class="result"></pre>
+        <div>
+          <button id="refresh-pos" class="link-btn">Refresh Purchase Orders</button>
+          <table id="pos-table"></table>
+        </div>
+      </section>
+
+      <section id="invoice-portal" class="card">
+        <h2>Invoice Management Portal</h2>
+        <form id="invoice-form">
+          <div class="form-grid">
+            <label for="invoice-id">Invoice ID</label>
+            <input id="invoice-id" name="invoice_id" required />
+
+            <label for="invoice-vendor">Vendor ID</label>
+            <input id="invoice-vendor" name="vendor_id" required />
+
+            <label for="invoice-po">Linked PO ID</label>
+            <input id="invoice-po" name="linked_po_id" required />
+
+            <label for="invoice-date">Received Date</label>
+            <input id="invoice-date" name="received_date" type="date" required />
+
+            <label for="invoice-rate">Default Rate</label>
+            <input id="invoice-rate" type="number" step="0.01" placeholder="Optional default rate" />
+          </div>
+
+          <h3>Invoice Items</h3>
+          <div id="invoice-items"></div>
+          <button type="button" id="add-invoice-item" class="secondary">Add Item</button>
+          <button type="submit">Create Invoice</button>
+        </form>
+
+        <div class="divider">OR</div>
+
+        <form id="invoice-upload-form">
+          <div class="form-grid">
+            <label for="invoice-upload-vendor">Vendor ID</label>
+            <input id="invoice-upload-vendor" name="vendor_id" required />
+
+            <label for="invoice-upload-po">Linked PO ID</label>
+            <input id="invoice-upload-po" name="linked_po_id" required />
+
+            <label for="invoice-file">Invoice File</label>
+            <input id="invoice-file" name="file" type="file" accept=".pdf,.jpg,.csv,.xls,.xlsx" required />
+          </div>
+          <button type="submit">Upload Invoice</button>
+        </form>
+
+        <pre id="invoice-result" class="result"></pre>
+        <div>
+          <button id="refresh-invoices" class="link-btn">Refresh Invoices</button>
+          <table id="invoices-table"></table>
+        </div>
+      </section>
+
+      <section id="dashboard" class="card">
+        <h2>Administrative Dashboard</h2>
+        <button id="refresh-dashboard" class="link-btn">Refresh Findings</button>
+        <table id="dashboard-table"></table>
+        <div id="llm-output" class="llm-output"></div>
+      </section>
+    </main>
+
+    <footer>
+      <small>Prototype build for GoDaddy deployment &mdash; FastAPI + vanilla JS frontend.</small>
+    </footer>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

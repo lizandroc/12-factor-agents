@@ -1,0 +1,54 @@
+import json
+from datetime import datetime
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from app.main import app, store_instance
+from app.schemas import InvoiceItem, ManualInvoiceCreateRequest, POItem, POCreateRequest
+
+
+client = TestClient(app)
+
+
+def test_healthcheck():
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_po_invoice_flow(tmp_path, monkeypatch):
+    # Prepare PO payload
+    po_payload = POCreateRequest(
+        vendor_id="V-100",
+        items=[POItem(description="Widget", quantity=10, rate=5.0)],
+        issue_date=datetime.utcnow(),
+    )
+    response = client.post("/api/pos", json=json.loads(po_payload.json()))
+    assert response.status_code == 200
+    created_po_id = response.json()["entity"]["po_id"]
+
+    # Add invoice manually
+    invoice_payload = ManualInvoiceCreateRequest(
+        invoice_id="INV-1",
+        vendor_id="V-100",
+        linked_po_id=created_po_id,
+        items=[InvoiceItem(description="Widget", quantity=10, rate=5.0)],
+        received_date=datetime.utcnow(),
+        file_type="pdf",
+        file_url="uploads/invoice.pdf",
+    )
+    response = client.post("/api/invoices/manual", json=json.loads(invoice_payload.json()))
+    assert response.status_code == 200
+
+    # Reconcile
+    invoice_id = response.json()["entity"]["invoice_id"]
+    po_id = response.json()["entity"]["linked_po_id"]
+    reconcile = client.post(
+        "/api/reconcile",
+        params={"linked_po_id": po_id, "linked_invoice_id": invoice_id},
+    )
+    assert reconcile.status_code == 200
+    data = reconcile.json()
+    assert data["status"] in {"success", "partial"}
+    assert "findings" in data
