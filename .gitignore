@@ -1,0 +1,17 @@
+# Python virtual environments
+.venv/
+*/.venv/
+
+# Node modules
+node_modules/
+*/node_modules/
+
+# Python cache
+__pycache__/
+*/__pycache__/
+
+# Upload artifacts
+uploads/
+apps/po-recon/backend/uploads/
+apps/po-recon/backend/storage/
+apps/po-recon/backend/state.json
