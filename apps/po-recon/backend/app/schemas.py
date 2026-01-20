@@ -62,6 +62,7 @@ class UploadedFile(BaseModel):
     extract_status: Literal["success", "failure"]
     extracted_data: Optional[Any]
     errors: Optional[List[str]]
+    storage_path: str
 
 
 class User(BaseModel):

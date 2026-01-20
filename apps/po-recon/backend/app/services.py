@@ -53,16 +53,19 @@ class FileExtractionService:
             extract_status = "failure"
             errors = [str(exc)]
 
+        storage_path = self.data_store.relative_storage_path(file_path)
         uploaded_file = self.data_store.register_file(
             file_type=file_type,
             extract_status=extract_status,
             extracted_data=extracted_data,
             errors=errors,
+            storage_path=storage_path,
         )
 
         return {
             "file": uploaded_file,
             "path": file_path,
+            "storage_path": storage_path,
         }
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -10,10 +11,18 @@ from fastapi.responses import JSONResponse
 
 from . import schemas, services, store
 
-UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
+DEFAULT_STORAGE_ROOT = Path.home() / "po_recon_data"
+STORAGE_ROOT = Path(os.getenv("PO_RECON_STORAGE_ROOT", str(DEFAULT_STORAGE_ROOT))).expanduser().resolve()
+PUBLIC_URL_PREFIX = os.getenv("PO_RECON_PUBLIC_URL_PREFIX", "/storage")
+
+UPLOAD_DIR = STORAGE_ROOT / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-store_instance = store.DataStore(upload_dir=UPLOAD_DIR)
+store_instance = store.DataStore(
+    upload_dir=UPLOAD_DIR,
+    storage_root=STORAGE_ROOT,
+    public_url_prefix=PUBLIC_URL_PREFIX,
+)
 file_service = services.FileExtractionService(store_instance)
 llm_service = services.LLMService()
 reconciliation_service = services.ReconciliationService(store_instance, llm_service)
@@ -103,7 +112,7 @@ async def upload_invoice(
         items=[],
         received_date=datetime.utcnow(),
         file_type=file_type,  # type: ignore[arg-type]
-        file_url=str(result["path"].relative_to(UPLOAD_DIR.parent)),
+        file_url=store_instance.to_public_url(result["path"]),
     )
     stored = store_instance.add_invoice(invoice)
     return JSONResponse(content=schemas.EntityResponse(status="success", entity=stored.dict()).dict())

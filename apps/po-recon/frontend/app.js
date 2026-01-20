@@ -1,4 +1,31 @@
-const API_BASE = "http://localhost:8000";
+const normaliseBase = (value) => (value ? value.replace(/\/+$/, "") : "");
+const determineApiBase = () => {
+  if (window.PO_RECON_API_BASE) {
+    return normaliseBase(window.PO_RECON_API_BASE);
+  }
+  const meta = document.querySelector('meta[name="po-recon-api-base"]');
+  if (meta && meta.content) {
+    return normaliseBase(meta.content);
+  }
+  return normaliseBase(window.location.origin);
+};
+
+const API_BASE = determineApiBase();
+
+const apiRequest = async (path, options = {}) => {
+  try {
+    const response = await fetch(`${API_BASE}${path}`, options);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = data?.detail || data?.error || response.statusText;
+      throw new Error(message || "Request failed");
+    }
+    return { ok: true, data };
+  } catch (error) {
+    console.error("API request failed", path, error);
+    return { ok: false, data: { error: error.message } };
+  }
+};
 
 const authEmail = document.querySelector("#auth-email");
 const authMethod = document.querySelector("#auth-method");
@@ -32,14 +59,15 @@ const llmOutputEl = document.querySelector("#llm-output");
 let sessionToken = null;
 
 const renderTable = (tableEl, items) => {
-  if (!items || !items.length) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) {
     tableEl.innerHTML = "<caption>No records found.</caption>";
     return;
   }
 
-  const headers = Object.keys(items[0]);
+  const headers = Object.keys(list[0]);
   const thead = `<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>`;
-  const tbody = `<tbody>${items
+  const tbody = `<tbody>${list
     .map(
       (item) =>
         `<tr>${headers
@@ -85,9 +113,8 @@ loginBtn.addEventListener("click", async () => {
     return;
   }
   const params = new URLSearchParams({ email: authEmail.value, method: authMethod.value });
-  const response = await fetch(`${API_BASE}/api/auth/login?${params.toString()}`);
-  const data = await response.json();
-  if (response.ok) {
+  const { ok, data } = await apiRequest(`/api/auth/login?${params.toString()}`);
+  if (ok) {
     sessionToken = data.token;
   }
   notify(authResult, data);
@@ -96,19 +123,17 @@ loginBtn.addEventListener("click", async () => {
 contractForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(contractForm);
-  const response = await fetch(`${API_BASE}/api/contracts/upload`, {
+  const { data } = await apiRequest("/api/contracts/upload", {
     method: "POST",
     body: formData,
   });
-  const data = await response.json();
   notify(contractResult, data);
   refreshContracts();
 });
 
 const refreshContracts = async () => {
-  const response = await fetch(`${API_BASE}/api/contracts`);
-  const data = await response.json();
-  renderTable(contractsTable, data);
+  const { data } = await apiRequest("/api/contracts");
+  renderTable(contractsTable, data || []);
 };
 
 poForm.addEventListener("submit", async (event) => {
@@ -125,20 +150,18 @@ poForm.addEventListener("submit", async (event) => {
     items,
   };
 
-  const response = await fetch(`${API_BASE}/api/pos`, {
+  const { data } = await apiRequest("/api/pos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await response.json();
   notify(poResult, data);
   refreshPos();
 });
 
 const refreshPos = async () => {
-  const response = await fetch(`${API_BASE}/api/pos`);
-  const data = await response.json();
-  renderTable(posTable, data);
+  const { data } = await apiRequest("/api/pos");
+  renderTable(posTable, data || []);
 };
 
 invoiceForm.addEventListener("submit", async (event) => {
@@ -159,12 +182,11 @@ invoiceForm.addEventListener("submit", async (event) => {
     items,
   };
 
-  const response = await fetch(`${API_BASE}/api/invoices/manual`, {
+  const { data } = await apiRequest("/api/invoices/manual", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await response.json();
   notify(invoiceResult, data);
   refreshInvoices();
 });
@@ -172,32 +194,29 @@ invoiceForm.addEventListener("submit", async (event) => {
 invoiceUploadForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(invoiceUploadForm);
-  const response = await fetch(`${API_BASE}/api/invoices/upload`, {
+  const { data } = await apiRequest("/api/invoices/upload", {
     method: "POST",
     body: formData,
   });
-  const data = await response.json();
   notify(invoiceResult, data);
   refreshInvoices();
 });
 
 const refreshInvoices = async () => {
-  const response = await fetch(`${API_BASE}/api/invoices`);
-  const data = await response.json();
-  renderTable(invoicesTable, data);
+  const { data } = await apiRequest("/api/invoices");
+  renderTable(invoicesTable, data || []);
 };
 
 const refreshDashboard = async () => {
-  const response = await fetch(`${API_BASE}/api/dashboard`);
-  const data = await response.json();
-  if (data.data) {
-    renderTable(dashboardTable, data.data);
+  const dashboardResponse = await apiRequest("/api/dashboard");
+  if (dashboardResponse.data?.data) {
+    renderTable(dashboardTable, dashboardResponse.data.data);
   } else {
     renderTable(dashboardTable, []);
   }
 
-  const llmResponse = await fetch(`${API_BASE}/api/llm-outputs`);
-  const llmData = await llmResponse.json();
+  const llmResponse = await apiRequest("/api/llm-outputs");
+  const llmData = llmResponse.data || [];
   llmOutputEl.innerHTML = llmData
     .map(
       (item) => `

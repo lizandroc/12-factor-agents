@@ -1,23 +1,36 @@
+import importlib
 import json
+import sys
 from datetime import datetime
-from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, store_instance
-from app.schemas import InvoiceItem, ManualInvoiceCreateRequest, POItem, POCreateRequest
+
+def build_test_client(tmp_path, monkeypatch):
+    storage_root = tmp_path / "storage"
+    monkeypatch.setenv("PO_RECON_STORAGE_ROOT", str(storage_root))
+    monkeypatch.setenv("PO_RECON_PUBLIC_URL_PREFIX", "")
+    if "app.main" in sys.modules:
+        del sys.modules["app.main"]
+    module = importlib.import_module("app.main")
+    return TestClient(module.app)
 
 
-client = TestClient(app)
+@pytest.fixture()
+def client(tmp_path, monkeypatch):
+    return build_test_client(tmp_path, monkeypatch)
 
 
-def test_healthcheck():
+def test_healthcheck(client):
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_po_invoice_flow(tmp_path, monkeypatch):
+def test_po_invoice_flow(client):
+    from app.schemas import InvoiceItem, ManualInvoiceCreateRequest, POItem, POCreateRequest
+
     # Prepare PO payload
     po_payload = POCreateRequest(
         vendor_id="V-100",
